@@ -1,0 +1,20 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "leaguestoolkit-api"
+main = "src/worker.js"
+compatibility_date = "2025-04-01"
+
+# Add your custom domain or *.pages.dev origin to ALLOWED_ORIGINS in src/worker.js
+# (Vars listed here are non-secret; keep API keys out of this file.)
+
+[observability]
+enabled = true
+
+# To deploy:
+#   1. cd worker
+#   2. npm install
+#   3. npx wrangler login
+#   4. npx wrangler deploy
+#
+# To run locally:
+#   npx wrangler dev
+#   (serves on http://localhost:8787 by default)
