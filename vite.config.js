@@ -5,3 +5,5 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 })
+
+// Auto-deploy test - connected to GitHub via Cloudflare Pages
