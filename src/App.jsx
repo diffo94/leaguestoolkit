@@ -825,7 +825,21 @@ function PrayerTool() {
         </div>
         <LeaguesSelect value={leaguesMulti} onChange={setLeaguesMulti} showCombatBonus={true} />
       </div>
-      {/* Shards on hand result panel */}
+
+      {/* ⚠️ Prayer level requirement warning */}
+      {currentLevel < bone.prayReq && (
+        <div style={{margin:"12px 28px 0",background:"#2d0a0a",border:"2px solid #cc3333",borderRadius:6,padding:"14px 18px",display:"flex",alignItems:"center",gap:14}}>
+          <span style={{fontSize:"1.6rem",flexShrink:0}}>⚠️</span>
+          <div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:"0.88rem",fontWeight:700,color:"#ff4444",letterSpacing:"0.06em"}}>
+              Prayer Level Too Low
+            </div>
+            <div style={{fontFamily:"'Crimson Text',serif",fontSize:"0.9rem",color:"#e07070",marginTop:3}}>
+              <strong>{bone.name}</strong> requires level <strong>{bone.prayReq} Prayer</strong> to use. Your current level is <strong style={{color:"#ff4444"}}>{currentLevel}</strong>. Select a different bone type or raise your Prayer level first.
+            </div>
+          </div>
+        </div>
+      )}
       {shardsOnHand > 0 && (
         <div style={{margin:"12px 28px 0",background:"#1a2d00",border:"1px solid #4a7a1a",borderRadius:6,padding:"14px 18px",display:"flex",flexWrap:"wrap",gap:24,alignItems:"center"}}>
           <span style={{fontSize:"1.3rem"}}>💎</span>
