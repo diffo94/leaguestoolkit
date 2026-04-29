@@ -206,12 +206,12 @@ function xpToLevel(xp) {
 const FOODS = [
   { name: "Shrimp",      icon: "🦐", req: 1,  xp: 30,  burnStopFire: 34,  burnStopRange: null, burnStopGauntlets: null },
   { name: "Sardine",     icon: "🐟", req: 1,  xp: 40,  burnStopFire: 38,  burnStopRange: null, burnStopGauntlets: null },
-  { name: "Herring",     icon: "🐟", req: 5,  xp: 50,  burnStopFire: 41,  burnStopRange: null, burnStopGauntlets: null },
-  { name: "Anchovies",   icon: "🐟", req: 1,  xp: 30,  burnStopFire: 34,  burnStopRange: null, burnStopGauntlets: null },
-  { name: "Mackerel",    icon: "🐟", req: 10, xp: 60,  burnStopFire: 45,  burnStopRange: null, burnStopGauntlets: null },
+  { name: "Herring",     icon: "🐠", req: 5,  xp: 50,  burnStopFire: 41,  burnStopRange: null, burnStopGauntlets: null },
+  { name: "Anchovies",   icon: "🫙", req: 1,  xp: 30,  burnStopFire: 34,  burnStopRange: null, burnStopGauntlets: null },
+  { name: "Mackerel",    icon: "🐡", req: 10, xp: 60,  burnStopFire: 45,  burnStopRange: null, burnStopGauntlets: null },
   { name: "Trout",       icon: "🐟", req: 15, xp: 70,  burnStopFire: 49,  burnStopRange: null, burnStopGauntlets: null },
-  { name: "Cod",         icon: "🐟", req: 18, xp: 75,  burnStopFire: 51,  burnStopRange: 49,   burnStopGauntlets: null },
-  { name: "Pike",        icon: "🐟", req: 20, xp: 80,  burnStopFire: 54,  burnStopRange: null, burnStopGauntlets: null },
+  { name: "Cod",         icon: "🐠", req: 18, xp: 75,  burnStopFire: 51,  burnStopRange: 49,   burnStopGauntlets: null },
+  { name: "Pike",        icon: "🐡", req: 20, xp: 80,  burnStopFire: 54,  burnStopRange: null, burnStopGauntlets: null },
   { name: "Salmon",      icon: "🐟", req: 25, xp: 90,  burnStopFire: 58,  burnStopRange: null, burnStopGauntlets: null },
   { name: "Tuna",        icon: "🐠", req: 30, xp: 100, burnStopFire: 63,  burnStopRange: null, burnStopGauntlets: null },
   { name: "Lobster",     icon: "🦞", req: 40, xp: 120, burnStopFire: 74,  burnStopRange: 74,   burnStopGauntlets: 64 },
@@ -221,7 +221,7 @@ const FOODS = [
   { name: "Karambwan",   icon: "🦑", req: 30, xp: 190, burnStopFire: 999, burnStopRange: null, burnStopGauntlets: null },
   { name: "Shark",       icon: "🦈", req: 80, xp: 210, burnStopFire: 999, burnStopRange: 999,  burnStopGauntlets: 94 },
   { name: "Sea Turtle",  icon: "🐢", req: 82, xp: 211, burnStopFire: 999, burnStopRange: 999,  burnStopGauntlets: null },
-  { name: "Manta Ray",   icon: "🐠", req: 91, xp: 216, burnStopFire: 999, burnStopRange: 999,  burnStopGauntlets: null },
+  { name: "Manta Ray",   icon: "🪸", req: 91, xp: 216, burnStopFire: 999, burnStopRange: 999,  burnStopGauntlets: null },
   { name: "Dark Crab",   icon: "🦀", req: 90, xp: 215, burnStopFire: 999, burnStopRange: 999,  burnStopGauntlets: null },
   { name: "Anglerfish",  icon: "🎣", req: 84, xp: 230, burnStopFire: 999, burnStopRange: 999,  burnStopGauntlets: 97 },
 ];
@@ -394,7 +394,13 @@ function Spinner({ value, onChange, min = 1, max = 99, width = 56 }) {
 }
 
 // ─── LEAGUES SELECT ───────────────────────────────────────────────────────────
-function LeaguesSelect({ value, onChange }) {
+// Combat skills (including Prayer) get +50% bonus after Tier 3 relic (5x and above)
+function getCombatMulti(multi) {
+  return multi >= 5 ? multi * 1.5 : multi;
+}
+
+function LeaguesSelect({ value, onChange, showCombatBonus = false }) {
+  const combatMulti = getCombatMulti(value);
   return (
     <div className="control-group">
       <span className="control-label">Leagues XP Multiplier</span>
@@ -405,7 +411,11 @@ function LeaguesSelect({ value, onChange }) {
         <option value={12}>⚔ Leagues (12×)</option>
         <option value={16}>⚔ Leagues (16×)</option>
       </select>
-      {value > 1 && <div style={{ fontFamily: "'Crimson Text', serif", fontSize: "0.75rem", color: "#f5c842", marginTop: "3px" }}>⚔ {value}× multiplier active</div>}
+      {value > 1 && (
+        <div style={{ fontFamily: "'Crimson Text', serif", fontSize: "0.75rem", color: "#f5c842", marginTop: "3px" }}>
+          ⚔ {value}× active{showCombatBonus && value >= 5 ? ` · Combat/Prayer: ${combatMulti}× (+50% Tier 3 relic)` : ""}
+        </div>
+      )}
     </div>
   );
 }
@@ -731,23 +741,33 @@ function PrayerTool() {
   const [wineType, setWineType] = useState("sunfire");
   const [leaguesMulti, setLeaguesMulti] = useState(1);
   const [boneKey, setBoneKey] = useState("Superior Dragon Bones");
+  const [shardsOnHand, setShardsOnHand] = useState(0);
+  const [shardsMode, setShardsMode] = useState("goal"); // "goal" or "shards"
 
   const safeTarget = Math.max(currentLevel + 1, Math.min(99, targetLevel));
   const bone = BONE_TYPES.find(b => b.name === boneKey) ?? BONE_TYPES[BONE_TYPES.length - 1];
 
-  const xpNeeded = Math.max(0, xpForLevel(safeTarget) - xpForLevel(currentLevel));
-  const xpPerShard = (wineType === "sunfire" ? 6 : 5) * leaguesMulti;
+  // Prayer is a combat skill — gets +50% at leagues tier 3+ (5x and above)
+  const effectiveMulti = getCombatMulti(leaguesMulti);
+  const xpPerShard = (wineType === "sunfire" ? 6 : 5) * effectiveMulti;
   const xpPerBone = xpPerShard * bone.shards;
 
+  // Goal mode: how many bones/shards needed to reach target level
+  const xpNeeded = Math.max(0, xpForLevel(safeTarget) - xpForLevel(currentLevel));
   const shardsNeeded = Math.ceil(xpNeeded / xpPerShard);
   const bonesNeeded = Math.ceil(shardsNeeded / bone.shards);
   const winesNeeded = Math.ceil(shardsNeeded / 400);
 
+  // Shards-on-hand mode: what level/XP will I reach using my current shards?
+  const xpFromShards = Math.floor(shardsOnHand * xpPerShard);
+  const currentXpBase = xpForLevel(currentLevel);
+  const xpAfterShards = currentXpBase + xpFromShards;
+  const levelAfterShards = (() => { for (let i = 98; i >= 0; i--) { if (xpAfterShards >= PRAYER_XP[i]) return i + 1; } return 1; })();
+  const winesForShards = Math.ceil(shardsOnHand / 400);
+
   const currentXp = xpForLevel(currentLevel);
   const targetXp = xpForLevel(safeTarget);
   const progressPct = Math.min(100, Math.round((currentXp / targetXp) * 100));
-
-  // Sort bones by shards descending for the dropdown — most common use case is picking best bones
   const sortedBones = [...BONE_TYPES].sort((a, b) => b.shards - a.shards);
 
   return (
@@ -765,6 +785,17 @@ function PrayerTool() {
           <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
             <Spinner value={safeTarget} onChange={v => setTargetLevel(Math.max(currentLevel+1, v))} min={Math.min(99,currentLevel+1)} max={99} />
             <input type="range" min={Math.min(99,currentLevel+1)} max={99} value={safeTarget} onChange={e => setTargetLevel(Number(e.target.value))} />
+          </div>
+        </div>
+        <div className="control-group">
+          <span className="control-label">Bone Shards on Hand</span>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <Spinner value={shardsOnHand} onChange={setShardsOnHand} min={0} max={999999} width={80} />
+            {shardsOnHand > 0 && (
+              <div style={{fontFamily:"'Crimson Text',serif",fontSize:"0.78rem",color:"#7ec842"}}>
+                → Level {levelAfterShards} · {xpFromShards.toLocaleString()} XP · {winesForShards} wines needed
+              </div>
+            )}
           </div>
         </div>
         <div className="control-group">
@@ -792,8 +823,36 @@ function PrayerTool() {
             <button className={`seg-btn ${wineType==="sunfire"?"active":""}`} onClick={()=>setWineType("sunfire")}>☀️ Sunfire (6 XP/shard)</button>
           </div>
         </div>
-        <LeaguesSelect value={leaguesMulti} onChange={setLeaguesMulti} />
+        <LeaguesSelect value={leaguesMulti} onChange={setLeaguesMulti} showCombatBonus={true} />
       </div>
+      {/* Shards on hand result panel */}
+      {shardsOnHand > 0 && (
+        <div style={{margin:"12px 28px 0",background:"#1a2d00",border:"1px solid #4a7a1a",borderRadius:6,padding:"14px 18px",display:"flex",flexWrap:"wrap",gap:24,alignItems:"center"}}>
+          <span style={{fontSize:"1.3rem"}}>💎</span>
+          <div>
+            <div style={{fontSize:"0.6rem",letterSpacing:"0.12em",color:"#5a8a3a",textTransform:"uppercase",marginBottom:4}}>Using {shardsOnHand.toLocaleString()} Bone Shards</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:"1rem",color:"#7ec842",fontWeight:600}}>
+              Lvl {currentLevel} → <span style={{color:"#f5c842"}}>Lvl {levelAfterShards}</span>
+            </div>
+            <div style={{fontFamily:"'Crimson Text',serif",fontSize:"0.82rem",color:"#b89a6a",marginTop:2}}>
+              +{xpFromShards.toLocaleString()} XP at {xpPerShard} XP/shard{leaguesMulti>=5?" (incl. +50% combat bonus)":""}
+            </div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"0.58rem",letterSpacing:"0.1em",color:"#5a8a3a",textTransform:"uppercase"}}>Wines Needed</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.2rem",color:"#f5c842",fontWeight:600}}>{winesForShards.toLocaleString()}</div>
+            <div style={{fontFamily:"'Crimson Text',serif",fontSize:"0.72rem",color:"#8b7355"}}>1 per 400 shards</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"0.58rem",letterSpacing:"0.1em",color:"#5a8a3a",textTransform:"uppercase"}}>XP Gained</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.2rem",color:"#f5c842",fontWeight:600}}>{xpFromShards.toLocaleString()}</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"0.58rem",letterSpacing:"0.1em",color:"#5a8a3a",textTransform:"uppercase"}}>Total XP After</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.2rem",color:"#f5c842",fontWeight:600}}>{xpAfterShards.toLocaleString()}</div>
+          </div>
+        </div>
+      )}
 
       <div className="xp-bar-wrap">
         <div className="xp-bar-label">Progress to Goal — Level {currentLevel} → {safeTarget}</div>
@@ -1854,7 +1913,8 @@ function LeaguesTaskTool() {
     setWikiError(null);
     setWikiData(null);
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      // Route through Cloudflare Worker proxy to avoid CORS — direct Anthropic calls are blocked by browsers
+      const response = await fetch("https://api.leaguestoolkit.com/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2041,8 +2101,8 @@ function LeaguesTaskTool() {
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "cooking",   icon: "🍳", label: "Cooking XP" },
-  { id: "karambwan", icon: "🦑", label: "Karambwan" },
-  { id: "prayer",    icon: "🦴", label: "Prayer Bones" },
+  { id: "karambwan", icon: "🎣", label: "Fishing" },
+  { id: "prayer",    icon: "🙏", label: "Prayer Calc" },
   { id: "thieving",  icon: "🗝", label: "Thieving" },
   { id: "orestall",  icon: "⛏", label: "Ore Stall" },
   { id: "tasks",     icon: "📋", label: "League Tasks" },
