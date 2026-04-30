@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 // ─── SHARED STYLES ────────────────────────────────────────────────────────────
 const GLOBAL_CSS = `
@@ -182,6 +182,55 @@ const GLOBAL_CSS = `
   .footer-note {
     text-align: center; padding: 0 28px 24px;
     font-family: 'Crimson Text', serif; font-style: italic; font-size: 0.82rem; color: #8b7355;
+  }
+
+  /* ── Mobile Layout ── */
+  @media (max-width: 640px) {
+    .tab-bar { flex-direction: column; position: relative; }
+    .tab-brand { border-right: none; border-bottom: 1px solid #3a2a0a; padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+    .tab-brand-title { font-size: 0.85rem; }
+    .tab-list { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+    .tab-btn { padding: 0 14px; font-size: 0.62rem; min-height: 40px; flex-shrink: 0; }
+    .tab-icon { font-size: 0.85rem; }
+
+    .controls { padding: 14px 16px; gap: 16px; }
+    .control-group { width: 100%; }
+
+    input[type="range"] { width: 100%; }
+
+    .stat-grid { padding: 14px 16px 0; gap: 10px; }
+    .stat-card { min-width: 140px; padding: 12px 14px; }
+    .stat-card-value { font-size: 1.1rem; }
+
+    .table-wrap { margin: 14px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 480px; }
+    th, td { padding: 8px 10px; font-size: 0.82rem; }
+
+    .best-banner { margin: 14px 16px 0; flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+    .best-food { font-size: 0.95rem; }
+
+    .xp-bar-wrap { margin: 14px 16px 0; }
+
+    .seg-group { flex-wrap: wrap; }
+    .seg-btn { font-size: 0.62rem; padding: 6px 10px; }
+
+    .spinner-wrap { height: 36px; }
+    .spinner-input { font-size: 0.85rem; }
+    .spin-btn { width: 32px; }
+
+    .section-header { padding: 14px 16px 0; }
+    .footer-note { padding: 0 16px 20px; font-size: 0.76rem; }
+
+    /* Task tab mobile */
+    .tab-list::-webkit-scrollbar { height: 3px; }
+    .tab-list::-webkit-scrollbar-thumb { background: #3a2a0a; border-radius: 2px; }
+  }
+
+  @media (max-width: 380px) {
+    .tab-brand-title { font-size: 0.78rem; }
+    .stat-card { min-width: 120px; }
+    .stat-card-value { font-size: 1rem; }
+    th, td { padding: 6px 8px; font-size: 0.76rem; }
   }
 
   /* ── Section headers ── */
@@ -422,12 +471,18 @@ function LeaguesSelect({ value, onChange, showCombatBonus = false }) {
 
 // ─── COOKING TOOL ─────────────────────────────────────────────────────────────
 function CookingTool() {
-  const [cookLevel, setCookLevel] = useState(70);
-  const [location, setLocation] = useState("fire");
-  const [gauntlets, setGauntlets] = useState(false);
+  const [cookLevel, setCookLevel] = useState(() => { try { return parseInt(localStorage.getItem("lt_cookLevel"))||70; } catch { return 70; } });
+  const [location, setLocation] = useState(() => { try { return localStorage.getItem("lt_location")||"fire"; } catch { return "fire"; } });
+  const [gauntlets, setGauntlets] = useState(() => { try { return localStorage.getItem("lt_gauntlets")==="true"; } catch { return false; } });
   const [sortBy, setSortBy] = useState("xphr");
-  const [bankTiles, setBankTiles] = useState(10);
-  const [leaguesMulti, setLeaguesMulti] = useState(1);
+  const [bankTiles, setBankTiles] = useState(() => { try { return parseInt(localStorage.getItem("lt_bankTiles"))||10; } catch { return 10; } });
+  const [leaguesMulti, setLeaguesMulti] = useState(() => { try { return parseInt(localStorage.getItem("lt_leaguesMulti"))||1; } catch { return 1; } });
+
+  useEffect(() => { try { localStorage.setItem("lt_cookLevel", cookLevel); } catch {} }, [cookLevel]);
+  useEffect(() => { try { localStorage.setItem("lt_location", location); } catch {} }, [location]);
+  useEffect(() => { try { localStorage.setItem("lt_gauntlets", gauntlets); } catch {} }, [gauntlets]);
+  useEffect(() => { try { localStorage.setItem("lt_bankTiles", bankTiles); } catch {} }, [bankTiles]);
+  useEffect(() => { try { localStorage.setItem("lt_leaguesMulti", leaguesMulti); } catch {} }, [leaguesMulti]);
 
   const actionsPerHour = useMemo(() => getActionsPerHour(bankTiles), [bankTiles]);
 
@@ -517,6 +572,7 @@ function CookingTool() {
               <th>Food</th>
               <th className={sortBy==="xp"?"sorted":""} onClick={()=>setSortBy("xp")}>Base XP <span className="sort-arrow">{sortBy==="xp"?"▼":"↕"}</span></th>
               <th className={sortBy==="burn"?"sorted":""} onClick={()=>setSortBy("burn")}>Burn Chance <span className="sort-arrow">{sortBy==="burn"?"▼":"↕"}</span></th>
+              <th title="Level at which burn chance reaches 0%">Stop Burn</th>
               <th>Eff. XP/Cook{leaguesMulti>1?` (${leaguesMulti}×)`:""}</th>
               <th className={sortBy==="xphr"?"sorted":""} onClick={()=>setSortBy("xphr")}>Est. XP/hr{leaguesMulti>1?` (${leaguesMulti}×)`:""} <span className="sort-arrow">{sortBy==="xphr"?"▼":"↕"}</span></th>
             </tr>
@@ -542,6 +598,15 @@ function CookingTool() {
                       <div className="burn-bar-bg"><div className="burn-bar-fill" style={{width:`${food.burnChance}%`,background:burnColor}}/></div>
                       <span style={{color:burnColor,fontFamily:"'Cinzel',serif",fontSize:"0.78rem",fontWeight:600,minWidth:"36px"}}>{food.burnChance}%</span>
                     </div>
+                  </td>
+                  <td style={{fontFamily:"'Cinzel',serif",fontSize:"0.78rem",color:
+                    food.burnStopFire>=999?"#cc3333":
+                    (location==="fire"?food.burnStopFire:(food.burnStopRange??food.burnStopFire)) <= cookLevel?"#7ec842":"#c9a84c"
+                  }}>
+                    {food.burnStopFire>=999?"Never":(()=>{
+                      const stop = gauntlets&&food.burnStopGauntlets?(location==="fire"?food.burnStopFire:food.burnStopGauntlets):(location==="fire"?food.burnStopFire:(food.burnStopRange??food.burnStopFire));
+                      return stop<=cookLevel?`✓ ${stop}`:`Lvl ${stop}`;
+                    })()}
                   </td>
                   <td style={{color:"#c9a84c"}}>{food.effectiveXp}</td>
                   <td><span className="xphr-cell" style={{color:i===0?"#f5c842":i<3?"#c9a84c":"#b89a6a"}}>{food.xpHr.toLocaleString()}</span></td>
@@ -1915,11 +1980,39 @@ function LeaguesTaskTool() {
   const [loading, setLoading] = useState(false);
   const [wikiData, setWikiData] = useState(null);
   const [wikiError, setWikiError] = useState(null);
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [selectedRelics, setSelectedRelics] = useState({});
-  const [completedTasks, setCompletedTasks] = useState({});
+  // Default to Global (no region), Varlamore (always unlocked), Karamja (auto-unlocked at 80 tasks)
+  const [selectedRegions, setSelectedRegions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lt_regions")) || ["Varlamore","Karamja"]; } catch { return ["Varlamore","Karamja"]; }
+  });
+  const [selectedRelics, setSelectedRelics] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lt_relics")) || {}; } catch { return {}; }
+  });
+  const [completedTasks, setCompletedTasks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lt_completed")) || {}; } catch { return {}; }
+  });
+
+  // Persist to localStorage whenever state changes
+  useEffect(() => { try { localStorage.setItem("lt_regions", JSON.stringify(selectedRegions)); } catch {} }, [selectedRegions]);
+  useEffect(() => { try { localStorage.setItem("lt_relics", JSON.stringify(selectedRelics)); } catch {} }, [selectedRelics]);
+  useEffect(() => { try { localStorage.setItem("lt_completed", JSON.stringify(completedTasks)); } catch {} }, [completedTasks]);
+
   const toggleRegion = (r) => setSelectedRegions(prev => prev.includes(r) ? prev.filter(x=>x!==r) : [...prev, r]);
   const toggleTask = (name) => setCompletedTasks(prev => ({...prev, [name]: !prev[name]}));
+
+  // Points tracker
+  const totalPointsEarned = useMemo(() => {
+    return TOP_TASKS
+      .filter(t => completedTasks[t.name])
+      .reduce((sum, t) => sum + t.points, 0);
+  }, [completedTasks]);
+
+  const relicPointsEarned = Object.keys(selectedRelics)
+    .filter(tier => selectedRelics[tier])
+    .reduce((sum, tier) => sum + (RELICS[tier]?.pts ?? 0), 0);
+
+  const totalLeaguePoints = totalPointsEarned + relicPointsEarned;
+
+  const completedCount = Object.values(completedTasks).filter(Boolean).length;
 
   async function lookupWikiSync() {
     if (!username.trim()) return;
@@ -2050,6 +2143,27 @@ function LeaguesTaskTool() {
         </div>
       )}
 
+      {/* Points tracker banner */}
+      <div style={{margin:"16px 28px 0",background:"linear-gradient(135deg,#1a1200,#2d1f00)",border:"1px solid #8b6914",borderRadius:6,padding:"14px 20px",display:"flex",flexWrap:"wrap",gap:20,alignItems:"center",boxShadow:"0 0 24px #8b691422"}}>
+        <div>
+          <div style={{fontSize:"0.58rem",letterSpacing:"0.12em",color:"#8b7355",textTransform:"uppercase",marginBottom:4}}>Tasks Completed</div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.3rem",fontWeight:700,color:"#f5c842"}}>{completedCount}<span style={{fontSize:"0.7rem",color:"#8b7355",marginLeft:4}}>ticked off</span></div>
+        </div>
+        <div>
+          <div style={{fontSize:"0.58rem",letterSpacing:"0.12em",color:"#8b7355",textTransform:"uppercase",marginBottom:4}}>Task Points</div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.3rem",fontWeight:700,color:"#f5c842"}}>{totalPointsEarned.toLocaleString()}</div>
+        </div>
+        <div>
+          <div style={{fontSize:"0.58rem",letterSpacing:"0.12em",color:"#8b7355",textTransform:"uppercase",marginBottom:4}}>Relic Points</div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.3rem",fontWeight:700,color:"#c9a84c"}}>{relicPointsEarned.toLocaleString()}</div>
+        </div>
+        <div style={{borderLeft:"1px solid #3a2a0a",paddingLeft:20}}>
+          <div style={{fontSize:"0.58rem",letterSpacing:"0.12em",color:"#8b7355",textTransform:"uppercase",marginBottom:4}}>Total League Points</div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:"1.6rem",fontWeight:700,color:"#f5c842",textShadow:"0 0 16px #f5c84266"}}>{totalLeaguePoints.toLocaleString()}</div>
+        </div>
+        <button onClick={()=>{if(window.confirm("Reset all completed tasks?"))setCompletedTasks({});}} style={{marginLeft:"auto",background:"transparent",border:"1px solid #3a2a0a",color:"#5a4a2a",borderRadius:4,padding:"4px 10px",fontFamily:"'Cinzel',serif",fontSize:"0.58rem",cursor:"pointer",letterSpacing:"0.08em"}}>Reset Tasks</button>
+      </div>
+
       {/* Top tasks table */}
       <div style={{margin:"16px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:8}}>
         <div style={{fontSize:"0.6rem",letterSpacing:"0.12em",color:"#8b7355",textTransform:"uppercase"}}>
@@ -2132,8 +2246,26 @@ export default function OSRSToolkit() {
           <span className="tab-brand-icon">⚔️</span>
           <div>
             <div className="tab-brand-title">OSRS Toolkit</div>
-            <div className="tab-brand-sub">by Derek & Claude</div>
+            <div className="tab-brand-sub">by Diffo94 & Claude</div>
           </div>
+          <a
+            href="https://ko-fi.com/diffo94"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display:"flex", alignItems:"center", gap:"6px",
+              background:"#ff5e5b", color:"#fff", border:"none",
+              borderRadius:"4px", padding:"5px 10px", marginLeft:"12px",
+              fontFamily:"'Cinzel',serif", fontSize:"0.62rem", letterSpacing:"0.06em",
+              textDecoration:"none", whiteSpace:"nowrap", flexShrink:0,
+              boxShadow:"0 2px 8px rgba(255,94,91,0.35)",
+              transition:"background 0.15s",
+            }}
+            onMouseOver={e=>e.currentTarget.style.background="#e04e4b"}
+            onMouseOut={e=>e.currentTarget.style.background="#ff5e5b"}
+          >
+            ☕ Buy us a Coffee
+          </a>
         </div>
         <div className="tab-list">
           {TABS.map(tab => (
