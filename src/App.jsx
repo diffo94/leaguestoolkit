@@ -452,17 +452,35 @@ function LeaguesSelect({ value, onChange, showCombatBonus = false }) {
   const combatMulti = getCombatMulti(value);
   return (
     <div className="control-group">
-      <span className="control-label">Leagues XP Multiplier</span>
+      <span className="control-label">
+        Leagues XP Multiplier
+        {showCombatBonus && <span style={{color:"#f5c842",marginLeft:6,fontSize:"0.55rem",letterSpacing:"0.08em"}}>· PRAYER/COMBAT</span>}
+      </span>
       <select className={`leagues-select ${value > 1 ? "active-league" : ""}`} value={value} onChange={e => onChange(Number(e.target.value))}>
         <option value={1}>— Standard (1×)</option>
-        <option value={5}>⚔ Leagues (5×)</option>
-        <option value={8}>⚔ Leagues (8×)</option>
-        <option value={12}>⚔ Leagues (12×)</option>
-        <option value={16}>⚔ Leagues (16×)</option>
+        <option value={5}>⚔ Leagues (5×){showCombatBonus ? " → Prayer: 7.5×" : ""}</option>
+        <option value={8}>⚔ Leagues (8×){showCombatBonus ? " → Prayer: 12×" : ""}</option>
+        <option value={12}>⚔ Leagues (12×){showCombatBonus ? " → Prayer: 18×" : ""}</option>
+        <option value={16}>⚔ Leagues (16×){showCombatBonus ? " → Prayer: 24×" : ""}</option>
       </select>
       {value > 1 && (
         <div style={{ fontFamily: "'Crimson Text', serif", fontSize: "0.75rem", color: "#f5c842", marginTop: "3px" }}>
-          ⚔ {value}× active{showCombatBonus && value >= 5 ? ` · Combat/Prayer: ${combatMulti}× (+50% Tier 3 relic)` : ""}
+          ⚔ {value}× base multiplier active
+        </div>
+      )}
+      {showCombatBonus && value >= 5 && (
+        <div style={{
+          fontFamily: "'Cinzel', serif", fontSize: "0.65rem", color: "#f5c842",
+          background: "#2d1f00", border: "1px solid #8b6914", borderRadius: 3,
+          padding: "3px 8px", marginTop: 4, letterSpacing: "0.06em",
+          display: "flex", alignItems: "center", gap: 6,
+        }}>
+          ☩ Tier 3 relic +50% — effective Prayer XP: <strong>{combatMulti}×</strong>
+        </div>
+      )}
+      {showCombatBonus && value < 5 && value > 1 && (
+        <div style={{ fontFamily: "'Crimson Text', serif", fontSize: "0.72rem", color: "#8b7355", marginTop: 3 }}>
+          +50% Prayer bonus unlocks at 5× (Tier 3 relic)
         </div>
       )}
     </div>
